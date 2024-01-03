@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        margin: 0;
+        box-sizing: border-box;
+      }
+      #menu {
+        position: fixed;
+        top: 0;
+        background-color: #333;
+        padding: 10px;
+      }
+      #menu button {
+        padding: 8px 16px;
+        background: #555;
+        color: white;
+        border: none;
+        cursor: pointer;
+        margin-top: 5px;
+      }
+      #menu .sub {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 14px;
+        button {
+          margin-right: 10px;
+          background: rgb(71, 71, 70);
+        }
+      }
+      #content {
+        margin: 180px 20px;
+        padding: 20px;
+        border: 1px solid #ccc;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="menu">
+      <div class="main">
+        <button onclick="addFullWidthSection()">Add Full Width Section</button>
+        <button onclick="addHeading()">Add Heading</button>
+        <button onclick="addParagraph()">Add Paragraph</button>
+        <button onclick="addImage()">Add Image</button>
+      </div>
+      <div class="sub">
+        <button onclick="undo()">Undo</button>
+        <button onclick="redo()">Redo</button>
+        <button onclick="downloadHtml()">Download Html</button>
+        <button onclick="saveChanges()">Save Changes</button>
+      </div>
+    </div>
+    <div id="content" contenteditable="true"></div>
+
+    <script>
+      let undoStack = [];
+      let redoStack = [];
+      let imageUrls = [];
+      document.addEventListener("DOMContentLoaded", loadContent);
+
+      function addFullWidthSection() {
+        const fullWidthSection = document.createElement("section");
+        fullWidthSection.classList.add("full-width-section");
+        setElementColor(fullWidthSection);
+        const height = prompt("Enter height (e.g., 200px):");
+        if (height) {
+          fullWidthSection.style.height = height;
+          document.getElementById("content").appendChild(fullWidthSection);
+          addToUndoStack();
+        } else {
+          fullWidthSection.style.height = "100vh";
+          document.getElementById("content").appendChild(fullWidthSection);
+          addToUndoStack();
+        }
+      }
+      function addHeading() {
+        const heading = document.createElement("h1");
+        heading.innerText = "New Heading";
+        setElementColor(heading);
+        document.getElementById("content").appendChild(heading);
+        addToUndoStack();
+      }
+      function addParagraph() {
+        const paragraph = document.createElement("p");
+        paragraph.innerText = "This is a paragraph.";
+        setElementColor(paragraph);
+        document.getElementById("content").appendChild(paragraph);
+        addToUndoStack();
+      }
+      function addImage() {
+        const imagePath = prompt("Enter local path or online link for image:");
+        if (imagePath) {
+          if (isOnlineLink(imagePath)) {
+            imageUrls.push(imagePath);
+            saveImageUrls();
+          }
+          const image = document.createElement("img");
+          image.src = imagePath;
+          document.getElementById("content").appendChild(image);
+          addToUndoStack();
+        }
+      }
+
+      function isOnlineLink(path) {
+        return path.startsWith("http") || path.startsWith("www");
+      }
+      function setElementColor(element) {
+        const shouldSetColor = confirm("Want to set color?");
+        if (shouldSetColor) {
+          const color = prompt("Enter the bg color (hex or any):");
+          if (color) {
+            element.style.backgroundColor = color;
+          }
+        }
+      }
+
+      function addToUndoStack() {
+        undoStack.push(document.getElementById("content").innerHTML);
+        redoStack = [];
+      }
+      function undo() {
+        if (undoStack.length > 1) {
+          redoStack.push(undoStack.pop());
+          document.getElementById("content").innerHTML =
+            undoStack[undoStack.length - 1];
+        }
+      }
+      function redo() {
+        if (redoStack.length > 0) {
+          undoStack.push(redoStack.pop());
+          document.getElementById("content").innerHTML =
+            undoStack[undoStack.length - 1];
+        }
+      }
+      function downloadHtml() {
+        const content = document.getElementById("content").innerHTML;
+        const blob = new Blob([content], { type: "text/html" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "website_content.html";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      function saveImageUrls() {
+        localStorage.setItem("image_urls", JSON.stringify(imageUrls));
+      }
+      function saveChanges() {
+        const content = document.getElementById("content").innerHTML;
+        localStorage.setItem("website_content", content);
+        localStorage.setItem("image_urls", JSON.stringify(imageUrls));
+        alert("Changes saved successfully!");
+      }
+
+      function loadContent() {
+        const savedContent = localStorage.getItem("website_content");
+        if (savedContent) {
+          document.getElementById("content").innerHTML = savedContent;
+        }
+        const savedImageUrls = localStorage.getItem("image_urls");
+        if (savedImageUrls) {
+          imageUrls = JSON.parse(savedImageUrls);
+        }
+      }
+    </script>
+  </body>
+</html>
